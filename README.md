@@ -12,16 +12,52 @@ Plugin VST3 inteligente em Rust usando `nih-plug`.
 - Síntese interna Saw + Sine, ADSR por articulação, filtro lowpass e até 64 vozes.
 - Humanização leve e round robin básico.
 
-## Compilação
+## Build padrão
 
 ```bash
 cargo build --release
 ```
 
-Saídas esperadas:
+Saídas esperadas no target Windows x64:
 
-- Plugin: `target/release/SmartOrchestraVST.vst3` (Windows x64 target)
-- Host de teste: `target/release/SmartOrchestraTestHost.exe`
+- Plugin: `target/x86_64-pc-windows-msvc/release/SmartOrchestraVST.vst3`
+- Host de teste: `target/x86_64-pc-windows-msvc/release/SmartOrchestraTestHost.exe`
+
+## Build de instalação (.exe)
+
+Este projeto inclui um pipeline para gerar instalador `.exe` com **Inno Setup 6**.
+
+### Pré-requisitos (Windows)
+
+1. Rust toolchain com target Windows x64:
+   ```powershell
+   rustup target add x86_64-pc-windows-msvc
+   ```
+2. Inno Setup 6 instalado (com `ISCC.exe`).
+
+### Gerar instalador
+
+Opção 1 (mais simples):
+
+```bat
+build_installer.bat
+```
+
+Opção 2 (PowerShell):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/build_installer.ps1
+```
+
+### Saídas do processo de instalação
+
+- Pacote intermediário: `dist/windows-package/`
+- Instalador final: `dist/windows-installer/SmartOrchestraVST-Setup-x64.exe`
+
+O instalador copia:
+- `SmartOrchestraTestHost.exe` para `Arquivos de Programas\SmartOrchestraVST`
+- bundle `SmartOrchestraVST.vst3` para a pasta do app
+- opcionalmente, o plugin para `C:\Program Files\Common Files\VST3\SmartOrchestraVST.vst3`
 
 ## Test Host (sem DAW)
 
