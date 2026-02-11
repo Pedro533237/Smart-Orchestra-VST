@@ -12,52 +12,59 @@ Plugin VST3 inteligente em Rust usando `nih-plug`.
 - Síntese interna Saw + Sine, ADSR por articulação, filtro lowpass e até 64 vozes.
 - Humanização leve e round robin básico.
 
-## Build padrão
+## Build com Gradle (pipeline de instalação)
 
-```bash
-cargo build --release
-```
+Este projeto agora usa **Gradle** para orquestrar o build (como pedido):
 
-Saídas esperadas no target Windows x64:
-
-- Plugin: `target/x86_64-pc-windows-msvc/release/SmartOrchestraVST.vst3`
-- Host de teste: `target/x86_64-pc-windows-msvc/release/SmartOrchestraTestHost.exe`
-
-## Build de instalação (.exe)
-
-Este projeto inclui um pipeline para gerar instalador `.exe` com **Inno Setup 6**.
+1. Compila plugin e host com Cargo para `x86_64-pc-windows-msvc`
+2. Monta `dist/windows-package`
+3. Gera instalador `.exe` com Inno Setup
 
 ### Pré-requisitos (Windows)
 
-1. Rust toolchain com target Windows x64:
+1. Rust + target Windows x64:
    ```powershell
    rustup target add x86_64-pc-windows-msvc
    ```
-2. Inno Setup 6 instalado (com `ISCC.exe`).
+2. Gradle instalado e disponível no `PATH` (recomendado Java 17 ou 21 em `JAVA_HOME`).
+3. Inno Setup 6 (`iscc` ou `ISCC.exe`) no `PATH`.
 
-### Gerar instalador
+### Comando principal
 
-Opção 1 (mais simples):
+```bat
+gradle buildWindowsInstaller
+```
+
+Ou via atalho:
 
 ```bat
 build_installer.bat
 ```
 
-Opção 2 (PowerShell):
+> Se necessário, defina `JAVA_HOME` para JDK 17/21 antes de rodar o Gradle.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/build_installer.ps1
+### Artefato final
+
+```text
+dist/windows-installer/SmartOrchestraVST-Setup-x64.exe
 ```
 
-### Saídas do processo de instalação
+### Propriedades opcionais do Gradle
 
-- Pacote intermediário: `dist/windows-package/`
-- Instalador final: `dist/windows-installer/SmartOrchestraVST-Setup-x64.exe`
+```bat
+gradle buildWindowsInstaller -PrustTarget=x86_64-pc-windows-msvc -PrustProfile=release -PcargoCmd=cargo -PisccCmd=iscc
+```
 
-O instalador copia:
-- `SmartOrchestraTestHost.exe` para `Arquivos de Programas\SmartOrchestraVST`
-- bundle `SmartOrchestraVST.vst3` para a pasta do app
-- opcionalmente, o plugin para `C:\Program Files\Common Files\VST3\SmartOrchestraVST.vst3`
+## Build Rust padrão (sem instalador)
+
+```bash
+cargo build --target x86_64-pc-windows-msvc --release
+```
+
+Saídas esperadas:
+
+- Plugin: `target/x86_64-pc-windows-msvc/release/SmartOrchestraVST.vst3`
+- Host de teste: `target/x86_64-pc-windows-msvc/release/SmartOrchestraTestHost.exe`
 
 ## Test Host (sem DAW)
 

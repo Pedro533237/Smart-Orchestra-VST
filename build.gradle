@@ -1,0 +1,82 @@
+plugins {
+    id 'base'
+}
+
+group = 'com.pedroaudiolabs'
+version = '0.1.0'
+
+ext {
+    rustTarget = (findProperty('rustTarget') ?: 'x86_64-pc-windows-msvc').toString()
+    rustProfile = (findProperty('rustProfile') ?: 'release').toString()
+    cargoCmd = (findProperty('cargoCmd') ?: 'cargo').toString()
+    isccCmd = (findProperty('isccCmd') ?: 'iscc').toString()
+
+    targetDir = file("target/${rustTarget}/${rustProfile}")
+    packageDir = file('dist/windows-package')
+    installerDir = file('dist/windows-installer')
+    issScript = file('installer/SmartOrchestraVST.iss')
+}
+
+tasks.register('cleanDist', Delete) {
+    delete 'dist/windows-package', 'dist/windows-installer'
+}
+
+tasks.register('cargoBuildWindows', Exec) {
+    group = 'build'
+    description = 'Compila o plugin e host para Windows x64 usando Cargo.'
+    commandLine cargoCmd, 'build', '--target', rustTarget, '--profile', rustProfile
+}
+
+tasks.register('stageWindowsPackage') {
+    group = 'build'
+    description = 'Prepara dist/windows-package com .vst3 e SmartOrchestraTestHost.exe.'
+    dependsOn 'cargoBuildWindows', 'cleanDist'
+
+    doLast {
+        packageDir.mkdirs()
+        installerDir.mkdirs()
+
+        def hostExe = file("${targetDir}/SmartOrchestraTestHost.exe")
+        def vst3Dir = file("${targetDir}/SmartOrchestraVST.vst3")
+
+        if (!hostExe.exists()) {
+            throw new GradleException("Host não encontrado: ${hostExe}")
+        }
+        if (!vst3Dir.exists()) {
+            throw new GradleException("Bundle VST3 não encontrado: ${vst3Dir}")
+        }
+
+        copy {
+            from hostExe
+            into packageDir
+        }
+
+        copy {
+            from vst3Dir
+            into new File(packageDir, 'SmartOrchestraVST.vst3')
+        }
+
+        copy {
+            from 'README.md'
+            into packageDir
+        }
+    }
+}
+
+tasks.register('buildInstallerExe', Exec) {
+    group = 'distribution'
+    description = 'Gera o instalador .exe com Inno Setup (ISCC).'
+    dependsOn 'stageWindowsPackage'
+
+    commandLine isccCmd, issScript.absolutePath
+}
+
+tasks.register('buildWindowsInstaller') {
+    group = 'distribution'
+    description = 'Pipeline completo: cargo build + staging + instalador .exe.'
+    dependsOn 'buildInstallerExe'
+
+    doLast {
+        println 'Instalador gerado em: dist/windows-installer/SmartOrchestraVST-Setup-x64.exe'
+    }
+}
